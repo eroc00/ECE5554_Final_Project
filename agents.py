@@ -1,5 +1,7 @@
 import numpy as np
 import random
+import models
+import cv2
 
 class Agent:
     f = None
@@ -19,12 +21,17 @@ class Agent:
         shape = referenceImage.shape
         self.maxBounds = (shape[0] - self.f, shape[1] - self.f)
 
-        self.pos = (random.randint(0, self.maxBounds[0]), 
-                random.randint(0, self.maxBounds[1]))
+        self.randomizePosition()
 
-    def __call__(self):
-        pass
+    def __call__(self, img):
+        self.changeImage(img)
+        self.randomizePosition()
+        self.capture()
 
+    def changeImage(self, image):
+        self.refImg = image
+    
+    # Samples the reference image based on its view window
     def capture(self):        
         self.view = self.refImg[self.pos[0]:self.pos[0]+self.f, #x
                                 self.pos[1]:self.pos[1]+self.f] #y
@@ -32,6 +39,13 @@ class Agent:
     def move(self):
         pass
 
+    def randomizePosition(self):
+        self.pos = (random.randint(0, self.maxBounds[0]), 
+                random.randint(0, self.maxBounds[1]))
+
+    # Scans through a photo in a snake-like pattern (from top to bottom).
+    # Respects agent's view window boundaries to not access an out of bounds 
+    # pixel value in an image
     def traverse(self):
 
         self.prevPos = self.pos
@@ -58,15 +72,63 @@ class Agent:
 class ClassifierAgent:
     newImg = None
 
-    def __init__(self, image):
-        self.newImg = np.zeros(image.shape, dtype="uint8")
+    model = None
 
-    def update(self, *args):
-        for agent in args:
+    agents = None
+
+    def __init__(self, image=np.zeros((28, 28, 1)), numAgents=2, windowLen=2):
+        self.newImg = np.zeros(image.shape)
+
+        self.agents = [Agent(image, windowLen) for i in range(numAgents)]
+
+        print(f"Number of agents: {len(self.agents)}")
+        self.initModel()
+
+    def capture(self):
+        for agent in self.agents:
             agent.capture()
             pos = agent.pos
-            self.newImg[pos[0]:pos[0]+agent.f, pos[1]:pos[1]+agent.f, :] = agent.view
+            self.newImg[pos[0]:pos[0]+agent.f, pos[1]:pos[1]+agent.f, :] = agent.view/255.0
 
+    def sampleImage(self, image):
+        #samImg = np.zeros(image.shape)
+
+        self.newImg = np.zeros(image.shape)
+        for agent in self.agents:
+            agent(image)
+            pos = agent.pos
+            self.newImg[pos[0]:pos[0]+agent.f, pos[1]:pos[1]+agent.f] = agent.view/255.0
+
+        return self.newImg
+
+
+    # Function should move all agents across an image appropriately
+    def moveAgents(self):
+        pass
+
+
+    def initModel(self):
+        self.model = models.create_CNN_model(self.newImg.shape, 10)
+
+    # Loads a saved model. CURRENTLY DOES NOT WORK
+    def loadModel(self):
+        self.initModel()
+        self.model.load_weights(models.checkpoint_path)
+    
+    
+
+#classifier = ClassifierAgent()
+
+#classifier.model.summary()
+
+
+
+#classifier.loadModel()
+
+#classifier.model.summary()
+    
+
+    
     
 
 

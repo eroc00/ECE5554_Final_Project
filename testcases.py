@@ -8,16 +8,17 @@ image = cv.imread("trainingSample/img_569.jpg")
 #dim = image.shape
 dimResized = (512, 512)
 
-a = Agent(image, 6)
-b = Agent(image, 6)
-mainDude = ClassifierAgent(image)
+#a = Agent(image, 6)
+#b = Agent(image, 6)
+mainDude = ClassifierAgent(image, numAgents=2, windowLen=2)
+mainDude.capture()
 
-a.capture()
-b.capture()
+#a.capture()
+#b.capture()
 
-cv.imshow("Sample Image", cv.resize(a.refImg, dimResized, interpolation=cv.INTER_AREA))
-cv.imshow("Agent a's view", cv.resize(a.view, dimResized, interpolation=cv.INTER_AREA))
-cv.imshow("Agent b's view", cv.resize(b.view, dimResized, interpolation=cv.INTER_AREA))
+cv.imshow("Sample Image", cv.resize(image, dimResized, interpolation=cv.INTER_AREA))
+cv.imshow("Agent a's view", cv.resize(mainDude.agents[0].view, dimResized, interpolation=cv.INTER_AREA))
+cv.imshow("Agent b's view", cv.resize(mainDude.agents[1].view, dimResized, interpolation=cv.INTER_AREA))
 cv.waitKey()
 
 ## Test Traverse Function. Should carry the agent through every possible pixel location it can
@@ -61,3 +62,16 @@ cv.waitKey()
 
 """
 
+# Tests the Sampling function by the Classifier Agent
+image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+
+classifier = ClassifierAgent(image/255.0, numAgents=4, windowLen=6)
+
+i = classifier.sampleImage(image)
+
+print(f"Input image dimensions: {image.shape}, data type: {image.dtype} | \
+        Output image dimensions: {i.shape}, data type: {i.dtype}")
+
+cv.imshow("Sampled Image", cv.resize(i, dimResized, interpolation=cv.INTER_AREA))
+
+cv.waitKey()
